@@ -2,19 +2,18 @@ import * as React from "react";
 
 export type InputProps = React.InputHTMLAttributes<HTMLInputElement>;
 
-export const Input = React.forwardRef<HTMLInputElement, InputProps>(({ className = "", ...props }, ref) => {
-  return (
-    <input
-      ref={ref}
-      className={
-        "flex h-10 w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm " +
-        "text-black placeholder-black focus:outline-none focus:ring-2 focus:ring-neutral-400 focus:border-neutral-400 " +
-        "dark:bg-white dark:text-black dark:placeholder-black " +
-        className
-      }
-      {...props}
-    />
-  );
-});
-
+const Input = React.forwardRef<HTMLInputElement, InputProps>(
+  ({ className, type, ...props }, ref) => {
+    return (
+      <input
+        type={type}
+        className={`flex h-12 w-full rounded-2xl border-2 border-gray-200 bg-white/90 backdrop-blur-sm px-4 py-3 text-gray-900 ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-gray-900 placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/20 focus-visible:ring-offset-2 focus-visible:border-blue-500 disabled:cursor-not-allowed disabled:opacity-50 hover:border-gray-300 hover:shadow-md smooth-transition-fast shadow-sm ${className}`}
+        ref={ref}
+        {...props}
+      />
+    );
+  }
+);
 Input.displayName = "Input";
+
+export { Input };

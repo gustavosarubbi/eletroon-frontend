@@ -1,15 +1,16 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useAuth } from "@/contexts/AuthContext";
-import { getHistoricalData, getLatestReading, getSalaInfo } from "@/lib/api";
+import * as React from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card";
+import { useAuth } from "../../../contexts/AuthContext";
+import { getHistoricalData, getLatestReading, getSalaInfo } from "../../../lib/api";
 import { useQuery } from "@tanstack/react-query";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from "recharts";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend, Area, AreaChart } from "recharts";
 import { useMemo, useState } from "react";
-import { Badge } from "@/components/ui/badge";
-
-import { Button } from "@/components/ui/button";
-
+import { Badge } from "../../../components/ui/badge";
+import { Loader2, Zap, Activity, TrendingUp, Gauge, Power, Clock, Calendar, RefreshCw, AlertTriangle } from "lucide-react";
+import { Button } from "../../../components/ui/button";
+import { motion } from "framer-motion";
 import { MonthlyReport } from "./components/MonthlyReport";
 import { PeriodSelector } from "./components/PeriodSelector";
 
@@ -125,7 +126,70 @@ export default function UserDashboardPage() {
   }, [filtered]);
 
   if (isLoadingLatest) {
-    return <div>Carregando dashboard...</div>;
+    return (
+      <div className="flex justify-center items-center h-96">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.6 }}
+          className="text-center"
+        >
+          <motion.div 
+            className="w-20 h-20 gradient-primary rounded-full flex items-center justify-center mx-auto mb-6 shadow-2xl"
+            animate={{ 
+              rotate: 360,
+              boxShadow: [
+                "0 0 20px rgba(59, 130, 246, 0.3)",
+                "0 0 40px rgba(59, 130, 246, 0.6)",
+                "0 0 20px rgba(59, 130, 246, 0.3)"
+              ]
+            }}
+            transition={{ 
+              rotate: { duration: 2, repeat: Infinity, ease: "linear" },
+              boxShadow: { duration: 2, repeat: Infinity, ease: "easeInOut" }
+            }}
+          >
+            <Loader2 className="w-10 h-10 text-white" />
+          </motion.div>
+          <p className="text-gray-700 font-semibold text-lg">Carregando dados do medidor...</p>
+        </motion.div>
+      </div>
+    );
+  }
+
+  if (isErrorLatest) {
+    return (
+      <motion.div 
+        className="text-center p-12"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+      >
+        <div className="glass-effect border-2 border-red-200 rounded-3xl p-8 max-w-md mx-auto">
+          <motion.div 
+            className="text-red-600 mb-6"
+            animate={{ scale: [1, 1.1, 1] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          >
+            <AlertTriangle className="w-16 h-16 mx-auto" />
+          </motion.div>
+          <h3 className="text-xl font-bold text-red-800 mb-4">Erro de Conexão</h3>
+          <p className="text-red-700 mb-6 text-lg">
+            Não foi possível carregar os dados do seu medidor.
+          </p>
+          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            <Button 
+              onClick={() => window.location.reload()} 
+              variant="outline" 
+              className="border-red-300 text-red-700 hover:bg-red-50 px-8 py-3 rounded-2xl font-semibold"
+            >
+              <RefreshCw className="w-5 h-5 mr-2" />
+              Tentar Novamente
+            </Button>
+          </motion.div>
+        </div>
+      </motion.div>
+    );
   }
 
   const lastTimestamp = latestReading ? new Date(latestReading.timestamp).getTime() : 0;
@@ -194,66 +258,104 @@ export default function UserDashboardPage() {
     ? "Últimas 24 horas"
     : "Últimos 7 dias";
 
-    return (
-    <div className="space-y-4 overflow-x-hidden flex flex-col items-center w-full">
-      <div className="flex flex-col items-center gap-4 w-full max-w-5xl px-4">
-         <div className="flex flex-col items-center gap-2">
-           {salaInfo && (
-             <>
-               <div className="flex flex-col items-center gap-4">
-                 <h1 className="text-3xl font-bold text-white text-center">
-                   {salaInfo.name}
-                 </h1>
-                 {salaInfo.user && (
-                   <div className="text-base text-white text-center">
-                     <span className="font-medium">Usuário:</span> {salaInfo.user.email}
-                   </div>
-                 )}
-                 <MonthlyReport />
-               </div>
-             </>
-           )}
-         </div>
-         
-         <div className="flex flex-wrap items-center justify-center gap-3">
-          <Badge variant={isOnline ? "default" : "destructive"}>{isOnline ? "ONLINE" : "OFFLINE"}</Badge>
-          <div className="text-xs text-black dark:text-neutral-300">
-            {latestReading ? `Última leitura: ${new Date(latestReading.timestamp).toLocaleString("pt-BR")}` : "Sem leituras"}
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        duration: 0.8,
+        staggerChildren: 0.15
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 30 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.6, ease: "easeOut" }
+    }
+  };
+
+  return (
+    <motion.div 
+      className="space-y-8 overflow-x-hidden flex flex-col items-center w-full min-h-screen"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
+      <div className="flex flex-col items-center gap-8 w-full max-w-7xl px-6 py-12">
+        {/* Header Section */}
+        <motion.div 
+          className="flex flex-col items-center gap-8 w-full"
+          variants={itemVariants}
+        >
+          {salaInfo && (
+            <div className="text-center">
+              <motion.h1 
+                className="text-5xl sm:text-6xl lg:text-7xl font-bold text-gradient-hero mb-6"
+                variants={itemVariants}
+              >
+                {salaInfo.name}
+              </motion.h1>
+              {salaInfo.user && (
+                <motion.p 
+                  className="text-xl sm:text-2xl text-gray-700 font-medium mb-6"
+                  variants={itemVariants}
+                >
+                  <span className="font-semibold">Usuário:</span> {salaInfo.user.email}
+                </motion.p>
+              )}
+              <motion.div variants={itemVariants}>
+                <MonthlyReport />
+              </motion.div>
+            </div>
+          )}
+        </motion.div>
+        
+        {/* Status and Controls */}
+        <motion.div 
+          className="flex flex-col sm:flex-row flex-wrap items-center justify-center gap-6 w-full"
+          variants={itemVariants}
+        >
+          <div className="flex items-center gap-4">
+            <motion.div whileHover={{ scale: 1.05 }}>
+              <Badge 
+                variant={isOnline ? "default" : "destructive"} 
+                className="text-sm font-bold px-6 py-3 rounded-2xl shadow-lg"
+              >
+                <motion.div 
+                  className={`w-3 h-3 rounded-full mr-3 ${isOnline ? 'bg-green-500' : 'bg-red-500'}`}
+                  animate={{ scale: [1, 1.2, 1] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                />
+                {isOnline ? "ONLINE" : "OFFLINE"}
+              </Badge>
+            </motion.div>
+            <div className="text-sm text-gray-700 font-semibold flex items-center gap-2">
+              <Clock className="w-5 h-5 text-blue-500" />
+              {latestReading ? `Última leitura: ${new Date(latestReading.timestamp).toLocaleString("pt-BR")}` : "Sem leituras"}
+            </div>
           </div>
-          <div className="w-px h-5 bg-neutral-200" />
-          <div className="flex gap-2">
-            <Button
-              className="h-8 px-3 py-1 text-sm"
-              variant={period === "1h" && !useCustomRange ? "default" : "outline"}
-              onClick={() => {
-                setPeriod("1h");
-                setUseCustomRange(false);
-              }}
-            >
-              Última hora
-            </Button>
-            <Button
-              className="h-8 px-3 py-1 text-sm"
-              variant={period === "24h" && !useCustomRange ? "default" : "outline"}
-              onClick={() => {
-                setPeriod("24h");
-                setUseCustomRange(false);
-              }}
-            >
-              24 horas
-            </Button>
-            <Button
-              className="h-8 px-3 py-1 text-sm"
-              variant={period === "7d" && !useCustomRange ? "default" : "outline"}
-              onClick={() => {
-                setPeriod("7d");
-                setUseCustomRange(false);
-              }}
-            >
-              7 dias
-            </Button>
+          
+          <div className="flex flex-wrap gap-3">
+            {["1h", "24h", "7d"].map((p) => (
+              <motion.div key={p} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Button
+                  className="h-12 px-6 py-3 text-sm font-bold rounded-2xl shadow-lg"
+                  variant={period === p && !useCustomRange ? "default" : "outline"}
+                  onClick={() => {
+                    setPeriod(p as Period);
+                    setUseCustomRange(false);
+                  }}
+                >
+                  {p}
+                </Button>
+              </motion.div>
+            ))}
           </div>
-          <div className="w-px h-5 bg-neutral-200" />
+          
           <PeriodSelector
             startDate={startDate}
             setStartDate={setStartDate}
@@ -268,333 +370,419 @@ export default function UserDashboardPage() {
             onApplyPreset={applyPreset}
             onClear={() => { setStartDate(""); setStartTime(""); setEndDate(""); setEndTime(""); setUseCustomRange(false); setPeriod("24h"); }}
           />
-        </div>
+        </motion.div>
       </div>
 
-      {isErrorLatest && (
-        <div className="text-red-500 text-sm">Não foi possível carregar os dados do seu medidor.</div>
-      )}
+      {/* Metrics Cards */}
+      <motion.div 
+        className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 w-full max-w-7xl px-6"
+        variants={itemVariants}
+      >
+        <motion.div
+          whileHover={{ scale: 1.03, y: -4 }}
+          transition={{ type: "spring", stiffness: 300 }}
+        >
+          <Card className="glass-effect border-0 shadow-2xl hover:shadow-3xl transition-all duration-300 relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-blue-600"></div>
+            <CardHeader className="pb-4">
+              <CardTitle className="text-sm font-bold text-gray-900 flex items-center gap-3">
+                <div className="w-4 h-4 rounded-full bg-blue-500 shadow-lg"></div>
+                <Power className="w-5 h-5 text-blue-500" />
+                Potência Ativa Total
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-4xl font-bold text-blue-600 mb-2">
+                {latestReading ? latestReading.pt.toFixed(2) : "—"}
+              </div>
+              <div className="text-sm text-gray-700 font-semibold">
+                {latestReading ? "Watts" : ""}
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
 
-             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 w-full">
-        <Card className="shadow-lg border-l-4 border-l-blue-500 hover:shadow-xl transition-shadow">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-black flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-              Potência Ativa Total
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-blue-600">
-              {latestReading ? latestReading.pt.toFixed(2) : "—"}
-            </div>
-            <div className="text-sm text-black mt-1">
-              {latestReading ? "Watts" : ""}
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="shadow-lg border-l-4 border-l-green-500 hover:shadow-xl transition-shadow">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-black flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-green-500"></div>
-              Consumo Total
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-green-600">
-              {latestReading ? latestReading.ept_c.toFixed(2) : "—"}
-            </div>
-            <div className="text-sm text-black mt-1">
-              {latestReading ? "kWh" : ""}
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="shadow-lg border-l-4 border-l-purple-500 hover:shadow-xl transition-shadow">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-black flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-purple-500"></div>
-              Tensão Média
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-purple-600">
-              {averageVoltageLatest}
-            </div>
-            <div className="text-sm text-black mt-1">
-              {averageVoltageLatest !== "—" ? "Volts" : ""}
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="shadow-lg border-l-4 border-l-orange-500 hover:shadow-xl transition-shadow">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-black flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-orange-500"></div>
-              Fator de Potência
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-orange-600">
-              {latestReading ? latestReading.pft.toFixed(2) : "—"}
-            </div>
-            <div className="text-sm text-black mt-1">
-              {latestReading ? "Cos φ" : ""}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+        <motion.div
+          whileHover={{ scale: 1.03, y: -4 }}
+          transition={{ type: "spring", stiffness: 300 }}
+        >
+          <Card className="glass-effect border-0 shadow-2xl hover:shadow-3xl transition-all duration-300 relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-green-500 to-green-600"></div>
+            <CardHeader className="pb-4">
+              <CardTitle className="text-sm font-bold text-gray-900 flex items-center gap-3">
+                <div className="w-4 h-4 rounded-full bg-green-500 shadow-lg"></div>
+                <TrendingUp className="w-5 h-5 text-green-500" />
+                Consumo Total
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-4xl font-bold text-green-600 mb-2">
+                {latestReading ? latestReading.ept_c.toFixed(2) : "—"}
+              </div>
+              <div className="text-sm text-gray-700 font-semibold">
+                {latestReading ? "kWh" : ""}
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
 
-             <div className="grid gap-6 md:grid-cols-2 w-full">
-        <Card className="shadow-lg">
-          <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100 border-b">
-            <CardTitle className="text-lg font-semibold text-black flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-              Histórico de Potência (PT)
+        <motion.div
+          whileHover={{ scale: 1.03, y: -4 }}
+          transition={{ type: "spring", stiffness: 300 }}
+        >
+          <Card className="glass-effect border-0 shadow-2xl hover:shadow-3xl transition-all duration-300 relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-500 to-purple-600"></div>
+            <CardHeader className="pb-4">
+              <CardTitle className="text-sm font-bold text-gray-900 flex items-center gap-3">
+                <div className="w-4 h-4 rounded-full bg-purple-500 shadow-lg"></div>
+                <Gauge className="w-5 h-5 text-purple-500" />
+                Tensão Média
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-4xl font-bold text-purple-600 mb-2">
+                {averageVoltageLatest}
+              </div>
+              <div className="text-sm text-gray-700 font-semibold">
+                {averageVoltageLatest !== "—" ? "Volts" : ""}
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        <motion.div
+          whileHover={{ scale: 1.03, y: -4 }}
+          transition={{ type: "spring", stiffness: 300 }}
+        >
+          <Card className="glass-effect border-0 shadow-2xl hover:shadow-3xl transition-all duration-300 relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-orange-500 to-orange-600"></div>
+            <CardHeader className="pb-4">
+              <CardTitle className="text-sm font-bold text-gray-900 flex items-center gap-3">
+                <div className="w-4 h-4 rounded-full bg-orange-500 shadow-lg"></div>
+                <Zap className="w-5 h-5 text-orange-500" />
+                Fator de Potência
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-4xl font-bold text-orange-600 mb-2">
+                {latestReading ? latestReading.pft.toFixed(2) : "—"}
+              </div>
+              <div className="text-sm text-gray-700 font-semibold">
+                {latestReading ? "Cos φ" : ""}
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </motion.div>
+
+      {/* Charts Grid */}
+      <motion.div 
+        className="grid gap-8 grid-cols-1 lg:grid-cols-2 w-full max-w-7xl px-6"
+        variants={itemVariants}
+      >
+        {/* Potência Ativa */}
+        <motion.div
+          whileHover={{ scale: 1.01 }}
+          transition={{ type: "spring", stiffness: 300 }}
+        >
+          <Card className="glass-effect border-0 shadow-2xl">
+            <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100 border-b border-blue-200 rounded-t-3xl">
+              <CardTitle className="text-xl font-bold text-blue-900 flex items-center gap-3">
+                <div className="w-4 h-4 rounded-full bg-blue-500 shadow-lg"></div>
+                <Activity className="w-6 h-6" />
+                Histórico de Potência (PT)
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-8">
+              <ResponsiveContainer width="100%" height={320}>
+                <AreaChart data={seriesPT} margin={{ top: 10, right: 30, left: 20, bottom: 10 }}>
+                  <defs>
+                    <linearGradient id="ptGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4}/>
+                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis 
+                    dataKey="time" 
+                    stroke="#6b7280"
+                    fontSize={12}
+                    tickLine={false}
+                  />
+                  <YAxis 
+                    stroke="#6b7280"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <Tooltip 
+                    contentStyle={{
+                      backgroundColor: 'white',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '16px',
+                      boxShadow: '0 20px 40px -10px rgba(0, 0, 0, 0.15)'
+                    }}
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="pt" 
+                    name="PT (W)" 
+                    stroke="#3b82f6" 
+                    strokeWidth={3}
+                    fill="url(#ptGradient)"
+                    dot={{ r: 4, stroke: "#3b82f6", strokeWidth: 2, fill: "white" }}
+                    activeDot={{ r: 6, stroke: "#3b82f6", strokeWidth: 2, fill: "#3b82f6" }}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Tensão e Fator de Potência */}
+        <motion.div
+          whileHover={{ scale: 1.01 }}
+          transition={{ type: "spring", stiffness: 300 }}
+        >
+          <Card className="glass-effect border-0 shadow-2xl">
+            <CardHeader className="bg-gradient-to-r from-green-50 to-green-100 border-b border-green-200 rounded-t-3xl">
+              <CardTitle className="text-xl font-bold text-green-900 flex items-center gap-3">
+                <div className="w-4 h-4 rounded-full bg-green-500 shadow-lg"></div>
+                <Gauge className="w-6 h-6" />
+                Tensão Média e Fator de Potência
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-8">
+              <ResponsiveContainer width="100%" height={320}>
+                <LineChart data={seriesVoltagePF} margin={{ top: 10, right: 30, left: 20, bottom: 10 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis 
+                    dataKey="time" 
+                    stroke="#6b7280"
+                    fontSize={12}
+                    tickLine={false}
+                  />
+                  <YAxis 
+                    yAxisId="left"
+                    stroke="#6b7280"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis 
+                    yAxisId="right" 
+                    orientation="right"
+                    stroke="#6b7280"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <Tooltip 
+                    contentStyle={{
+                      backgroundColor: 'white',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '16px',
+                      boxShadow: '0 20px 40px -10px rgba(0, 0, 0, 0.15)'
+                    }}
+                  />
+                  <Legend 
+                    wrapperStyle={{
+                      paddingTop: '15px',
+                      fontSize: '13px'
+                    }}
+                  />
+                  <Line 
+                    yAxisId="left" 
+                    type="monotone" 
+                    dataKey="vavg" 
+                    name="V média (V)" 
+                    stroke="#10b981" 
+                    strokeWidth={3}
+                    dot={{ r: 4, stroke: "#10b981", strokeWidth: 2, fill: "white" }}
+                    activeDot={{ r: 6, stroke: "#10b981", strokeWidth: 2, fill: "#10b981" }}
+                  />
+                  <Line 
+                    yAxisId="right" 
+                    type="monotone" 
+                    dataKey="pft" 
+                    name="FP" 
+                    stroke="#f59e0b" 
+                    strokeWidth={3}
+                    dot={{ r: 4, stroke: "#f59e0b", strokeWidth: 2, fill: "white" }}
+                    activeDot={{ r: 6, stroke: "#f59e0b", strokeWidth: 2, fill: "#f59e0b" }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Correntes RMS */}
+        <motion.div
+          whileHover={{ scale: 1.01 }}
+          transition={{ type: "spring", stiffness: 300 }}
+        >
+          <Card className="glass-effect border-0 shadow-2xl">
+            <CardHeader className="bg-gradient-to-r from-purple-50 to-purple-100 border-b border-purple-200 rounded-t-3xl">
+              <CardTitle className="text-xl font-bold text-purple-900 flex items-center gap-3">
+                <div className="w-4 h-4 rounded-full bg-purple-500 shadow-lg"></div>
+                <Zap className="w-6 h-6" />
+                Correntes RMS (A)
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-8">
+              <ResponsiveContainer width="100%" height={320}>
+                <LineChart data={seriesCurrents} margin={{ top: 10, right: 30, left: 20, bottom: 10 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis 
+                    dataKey="time" 
+                    stroke="#6b7280"
+                    fontSize={12}
+                    tickLine={false}
+                  />
+                  <YAxis 
+                    stroke="#6b7280"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <Tooltip 
+                    contentStyle={{
+                      backgroundColor: 'white',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '16px',
+                      boxShadow: '0 20px 40px -10px rgba(0, 0, 0, 0.15)'
+                    }}
+                  />
+                  <Legend 
+                    wrapperStyle={{
+                      paddingTop: '15px',
+                      fontSize: '13px'
+                    }}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="ia" 
+                    name="Ia (A)" 
+                    stroke="#8b5cf6" 
+                    strokeWidth={3}
+                    dot={{ r: 4, stroke: "#8b5cf6", strokeWidth: 2, fill: "white" }}
+                    activeDot={{ r: 6, stroke: "#8b5cf6", strokeWidth: 2, fill: "#8b5cf6" }}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="ib" 
+                    name="Ib (A)" 
+                    stroke="#06b6d4" 
+                    strokeWidth={3}
+                    dot={{ r: 4, stroke: "#06b6d4", strokeWidth: 2, fill: "white" }}
+                    activeDot={{ r: 6, stroke: "#06b6d4", strokeWidth: 2, fill: "#06b6d4" }}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="ic" 
+                    name="Ic (A)" 
+                    stroke="#f97316" 
+                    strokeWidth={3}
+                    dot={{ r: 4, stroke: "#f97316", strokeWidth: 2, fill: "white" }}
+                    activeDot={{ r: 6, stroke: "#f97316", strokeWidth: 2, fill: "#f97316" }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Potência Reativa */}
+        <motion.div
+          whileHover={{ scale: 1.01 }}
+          transition={{ type: "spring", stiffness: 300 }}
+        >
+          <Card className="glass-effect border-0 shadow-2xl">
+            <CardHeader className="bg-gradient-to-r from-red-50 to-red-100 border-b border-red-200 rounded-t-3xl">
+              <CardTitle className="text-xl font-bold text-red-900 flex items-center gap-3">
+                <div className="w-4 h-4 rounded-full bg-red-500 shadow-lg"></div>
+                <Activity className="w-6 h-6" />
+                Potência Reativa Total (VAr)
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-8">
+              <ResponsiveContainer width="100%" height={320}>
+                <AreaChart data={seriesQT} margin={{ top: 10, right: 30, left: 20, bottom: 10 }}>
+                  <defs>
+                    <linearGradient id="qtGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#ef4444" stopOpacity={0.4}/>
+                      <stop offset="95%" stopColor="#ef4444" stopOpacity={0.1}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis 
+                    dataKey="time" 
+                    stroke="#6b7280"
+                    fontSize={12}
+                    tickLine={false}
+                  />
+                  <YAxis 
+                    stroke="#6b7280"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <Tooltip 
+                    contentStyle={{
+                      backgroundColor: 'white',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '16px',
+                      boxShadow: '0 20px 40px -10px rgba(0, 0, 0, 0.15)'
+                    }}
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="qt" 
+                    name="QT (VAr)" 
+                    stroke="#ef4444" 
+                    strokeWidth={3}
+                    fill="url(#qtGradient)"
+                    dot={{ r: 4, stroke: "#ef4444", strokeWidth: 2, fill: "white" }}
+                    activeDot={{ r: 6, stroke: "#ef4444", strokeWidth: 2, fill: "#ef4444" }}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </motion.div>
+
+      {/* Report Card */}
+      <motion.div 
+        className="w-full max-w-7xl px-6 pb-12"
+        variants={itemVariants}
+      >
+        <Card className="glass-effect border-0 shadow-2xl">
+          <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200 rounded-t-3xl">
+            <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-3">
+              <Calendar className="w-6 h-6" />
+              Relatório do Período
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-6">
-            <ResponsiveContainer width="100%" height={250}>
-              <LineChart data={seriesPT} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis 
-                  dataKey="time" 
-                  stroke="#6b7280"
-                  fontSize={12}
-                  tickLine={false}
-                />
-                <YAxis 
-                  stroke="#6b7280"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <Tooltip 
-                  contentStyle={{
-                    backgroundColor: 'white',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '8px',
-                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                  }}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="pt" 
-                  name="PT (W)" 
-                  stroke="#3b82f6" 
-                  strokeWidth={1.5}
-                  dot={false}
-                  activeDot={{ r: 4, stroke: "#3b82f6", strokeWidth: 1 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+          <CardContent className="p-8">
+            <div className="grid gap-8 grid-cols-1 md:grid-cols-3">
+              <div className="text-center p-6 bg-white rounded-3xl border-2 border-gray-200 shadow-lg">
+                <div className="text-sm text-gray-600 font-semibold mb-3">Período</div>
+                <div className="text-2xl font-bold text-gray-900">{periodLabel}</div>
+              </div>
+              <div className="text-center p-6 bg-white rounded-3xl border-2 border-gray-200 shadow-lg">
+                <div className="text-sm text-gray-600 font-semibold mb-3">Consumo no período</div>
+                <div className="text-2xl font-bold text-green-600">{report.consumptionKWh.toFixed(3)} kWh</div>
+              </div>
+              <div className="text-center p-6 bg-white rounded-3xl border-2 border-gray-200 shadow-lg">
+                <div className="text-sm text-gray-600 font-semibold mb-3">Leituras consideradas</div>
+                <div className="text-2xl font-bold text-blue-600">{filtered.length}</div>
+              </div>
+            </div>
           </CardContent>
         </Card>
-
-        <Card className="shadow-lg">
-          <CardHeader className="bg-gradient-to-r from-green-50 to-green-100 border-b">
-            <CardTitle className="text-lg font-semibold text-black flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-green-500"></div>
-              Tensão Média e Fator de Potência
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            <ResponsiveContainer width="100%" height={250}>
-              <LineChart data={seriesVoltagePF} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis 
-                  dataKey="time" 
-                  stroke="#6b7280"
-                  fontSize={12}
-                  tickLine={false}
-                />
-                <YAxis 
-                  yAxisId="left"
-                  stroke="#6b7280"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <YAxis 
-                  yAxisId="right" 
-                  orientation="right"
-                  stroke="#6b7280"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <Tooltip 
-                  contentStyle={{
-                    backgroundColor: 'white',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '8px',
-                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                  }}
-                />
-                <Legend 
-                  wrapperStyle={{
-                    paddingTop: '10px',
-                    fontSize: '12px'
-                  }}
-                />
-                <Line 
-                  yAxisId="left" 
-                  type="monotone" 
-                  dataKey="vavg" 
-                  name="V média (V)" 
-                  stroke="#10b981" 
-                  strokeWidth={1.5}
-                  dot={false}
-                  activeDot={{ r: 4, stroke: "#10b981", strokeWidth: 1 }}
-                />
-                <Line 
-                  yAxisId="right" 
-                  type="monotone" 
-                  dataKey="pft" 
-                  name="FP" 
-                  stroke="#f59e0b" 
-                  strokeWidth={1.5}
-                  dot={false}
-                  activeDot={{ r: 4, stroke: "#f59e0b", strokeWidth: 1 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-lg">
-          <CardHeader className="bg-gradient-to-r from-purple-50 to-purple-100 border-b">
-            <CardTitle className="text-lg font-semibold text-purple-900 flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-purple-500"></div>
-              Correntes RMS (A)
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            <ResponsiveContainer width="100%" height={250}>
-              <LineChart data={seriesCurrents} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis 
-                  dataKey="time" 
-                  stroke="#6b7280"
-                  fontSize={12}
-                  tickLine={false}
-                />
-                <YAxis 
-                  stroke="#6b7280"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <Tooltip 
-                  contentStyle={{
-                    backgroundColor: 'white',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '8px',
-                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                  }}
-                />
-                <Legend 
-                  wrapperStyle={{
-                    paddingTop: '10px',
-                    fontSize: '12px'
-                  }}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="ia" 
-                  name="Ia (A)" 
-                  stroke="#8b5cf6" 
-                  strokeWidth={1.5}
-                  dot={false}
-                  activeDot={{ r: 4, stroke: "#8b5cf6", strokeWidth: 1 }}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="ib" 
-                  name="Ib (A)" 
-                  stroke="#06b6d4" 
-                  strokeWidth={1.5}
-                  dot={false}
-                  activeDot={{ r: 4, stroke: "#06b6d4", strokeWidth: 1 }}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="ic" 
-                  name="Ic (A)" 
-                  stroke="#f97316" 
-                  strokeWidth={1.5}
-                  dot={false}
-                  activeDot={{ r: 4, stroke: "#f97316", strokeWidth: 1 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-lg">
-          <CardHeader className="bg-gradient-to-r from-red-50 to-red-100 border-b">
-            <CardTitle className="text-lg font-semibold text-black flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-red-500"></div>
-              Potência Reativa Total (VAr)
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            <ResponsiveContainer width="100%" height={250}>
-              <LineChart data={seriesQT} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis 
-                  dataKey="time" 
-                  stroke="#6b7280"
-                  fontSize={12}
-                  tickLine={false}
-                />
-                <YAxis 
-                  stroke="#6b7280"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <Tooltip 
-                  contentStyle={{
-                    backgroundColor: 'white',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '8px',
-                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                  }}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="qt" 
-                  name="QT (VAr)" 
-                  stroke="#ef4444" 
-                  strokeWidth={1.5}
-                  dot={false}
-                  activeDot={{ r: 4, stroke: "#ef4444", strokeWidth: 1 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
-
-             <Card className="w-full">
-         <CardHeader>
-           <CardTitle className="text-sm font-medium text-black">Relatório do Período</CardTitle>
-         </CardHeader>
-        <CardContent>
-          <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
-                         <div>
-                               <div className="text-sm text-black">Período</div>
-                                                              <div className="text-lg font-semibold text-black">{periodLabel}</div>
-             </div>
-             <div>
-                               <div className="text-sm text-black">Consumo no período</div>
-                                                              <div className="text-lg font-semibold text-black">{report.consumptionKWh.toFixed(3)} kWh</div>
-             </div>
-             <div>
-                               <div className="text-sm text-black">Leituras consideradas</div>
-                                                              <div className="text-lg font-semibold text-black">{filtered.length}</div>
-             </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

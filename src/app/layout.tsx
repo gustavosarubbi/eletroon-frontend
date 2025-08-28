@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from "@/components/theme-provider";
-import { AuthProvider } from "@/contexts/AuthContext";
-import QueryProvider from "@/components/QueryProvider";
+import * as React from "react";
+import { ThemeProvider } from "../components/theme-provider";
+import { AuthProvider } from "../contexts/AuthContext";
+import QueryProvider from "../components/QueryProvider";
 import { Toaster } from "sonner";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -25,7 +26,7 @@ export default function RootLayout({
           <QueryProvider>
             <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
               {children}
-              <Toaster position="top-right" richColors closeButton />
+              <Toaster position="top-right" richColors closeButton className="z-toast" />
             </ThemeProvider>
           </QueryProvider>
         </AuthProvider>

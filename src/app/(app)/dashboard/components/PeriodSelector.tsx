@@ -1,10 +1,10 @@
 "use client";
 
-
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Input } from "@/components/ui/input";
+import * as React from "react";
+import { Button } from "../../../../components/ui/button";
+import { Calendar } from "../../../../components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "../../../../components/ui/popover";
+import { Input } from "../../../../components/ui/input";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Clock, X } from "lucide-react";
@@ -56,7 +56,7 @@ export function PeriodSelector({
           variant={useCustomRange ? "default" : "outline"}
           onClick={() => {}}
         >
-          📅 Período
+          📅 Período Personalizado
           {useCustomRange && (startDate || endDate) && (
             <span className="ml-1 text-xs">
               {startDate && endDate ? `${startDate} → ${endDate}` : "Configurando..."}
@@ -67,16 +67,16 @@ export function PeriodSelector({
               <PopoverContent align="end">
         <div className="p-6 space-y-4">
           <div className="space-y-2">
-            <h4 className="font-medium leading-none text-black">Seleção de Período</h4>
-            <p className="text-sm text-black">
+            <h4 className="font-medium leading-none text-gray-900">Período Personalizado</h4>
+            <p className="text-sm text-gray-700">
               Escolha as datas e horários para visualizar os gráficos
             </p>
           </div>
 
           {/* Atalhos rápidos */}
           <div className="space-y-2">
-            <div className="text-sm font-medium text-black">Atalhos Rápidos:</div>
-            <div className="flex gap-2">
+            <div className="text-sm font-medium text-gray-900">Atalhos Rápidos:</div>
+            <div className="flex flex-wrap gap-2">
               <Button 
                 className="h-7 px-2 py-1 text-xs" 
                 variant="outline" 
@@ -103,7 +103,7 @@ export function PeriodSelector({
 
           {/* Calendário único */}
           <div className="space-y-2">
-            <div className="text-sm font-medium text-black">Selecionar Período:</div>
+            <div className="text-sm font-medium text-gray-900">Selecionar Período:</div>
             <Calendar
               startDate={startDate}
               endDate={endDate}
@@ -132,38 +132,32 @@ export function PeriodSelector({
 
           {/* Seleção de horários */}
           <div className="space-y-2">
-            <div className="text-sm font-medium text-black">Horários:</div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="text-sm font-medium text-gray-900">Horários:</div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-xs text-black flex items-center gap-1">
-                  <Clock className="w-3 h-3" />
+                <label className="text-sm font-medium text-gray-900 flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-blue-600" />
                   Horário Início:
                 </label>
-                <Input 
-                  type="time" 
-                  step="60" 
-                  value={startTime} 
-                  onChange={(e) => { 
-                    setStartTime(e.target.value); 
-                    setUseCustomRange(true); 
-                  }} 
-                  className="text-sm w-full"
+                <Input
+                  type="time"
+                  value={startTime}
+                  onChange={(e) => { setStartTime(e.target.value); setUseCustomRange(true); }}
+                  className="w-full h-10"
+                  placeholder="00:00"
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-xs text-black flex items-center gap-1">
-                  <Clock className="w-3 h-3" />
+                <label className="text-sm font-medium text-gray-900 flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-blue-600" />
                   Horário Fim:
                 </label>
-                <Input 
-                  type="time" 
-                  step="60" 
-                  value={endTime} 
-                  onChange={(e) => { 
-                    setEndTime(e.target.value); 
-                    setUseCustomRange(true); 
-                  }} 
-                  className="text-sm w-full"
+                <Input
+                  type="time"
+                  value={endTime}
+                  onChange={(e) => { setEndTime(e.target.value); setUseCustomRange(true); }}
+                  className="w-full h-10"
+                  placeholder="23:59"
                 />
               </div>
             </div>
@@ -172,20 +166,20 @@ export function PeriodSelector({
           {/* Resumo do período selecionado */}
           {startDate && (
             <div className="p-3 bg-blue-50 rounded-md">
-              <div className="text-sm font-medium text-black mb-2">
+              <div className="text-sm font-medium text-gray-900 mb-2">
                 Período Selecionado:
               </div>
               <div className="space-y-1">
-                <div className="text-sm text-black">
+                <div className="text-sm text-gray-700">
                   <span className="font-bold">Início:</span> {format(new Date(startDate), 'dd/MM/yyyy', { locale: ptBR })} às {startTime || "00:00"}
                 </div>
                 {endDate && (
-                  <div className="text-sm text-black">
+                  <div className="text-sm text-gray-700">
                     <span className="font-bold">Fim:</span> {format(new Date(endDate), 'dd/MM/yyyy', { locale: ptBR })} às {endTime || "23:59"}
                   </div>
                 )}
                 {!endDate && (
-                  <div className="text-sm text-black italic">
+                  <div className="text-sm text-gray-700 italic">
                     Clique em outra data para definir o fim do período
                   </div>
                 )}
@@ -194,7 +188,7 @@ export function PeriodSelector({
           )}
 
           {/* Botões de ação */}
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <Button 
               onClick={handleClear}
               variant="outline" 

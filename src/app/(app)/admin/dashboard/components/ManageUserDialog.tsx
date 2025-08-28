@@ -1,10 +1,11 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { createUserForSala, updateUserForSala, deleteUserForSala } from "@/lib/api";
+import * as React from "react";
+import { Button } from "../../../../../components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "../../../../../components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "../../../../../components/ui/form";
+import { Input } from "../../../../../components/ui/input";
+import { createUserForSala, updateUserForSala, deleteUserForSala } from "../../../../../lib/api";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -12,7 +13,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import axios from "axios";
 import { toast } from "sonner";
-import { Settings } from "lucide-react";
+import { Settings, Loader2, UserPlus, User, Trash2, CheckCircle, AlertCircle, X } from "lucide-react";
 
 const createSchema = z.object({
   email: z.string().email({ message: "Por favor, insira um email válido." }),
@@ -79,8 +80,13 @@ export function ManageUserDialog({ sala }: { sala: Sala }) {
       setResultMessage(
         data.newPassword ? `Usuário criado. Senha: ${data.newPassword}` : data.message
       );
-      toast.success("Usuário criado com sucesso.");
+      toast.success("Usuário criado com sucesso!");
       createForm.reset();
+      
+      // Atualiza a página após 2 segundos para mostrar as mudanças
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
     },
     onError: (err) => {
       const full = extractErrorMessage(err);
@@ -104,7 +110,12 @@ export function ManageUserDialog({ sala }: { sala: Sala }) {
       const pwd = updateForm.getValues().password;
       if (pwd) persistPassword(pwd);
       setResultMessage(data.message);
-      toast.success("Dados do usuário atualizados.");
+      toast.success("Dados do usuário atualizados com sucesso!");
+      
+      // Atualiza a página após 2 segundos para mostrar as mudanças
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
     },
     onError: (err) => {
       const full = extractErrorMessage(err);
@@ -128,7 +139,12 @@ export function ManageUserDialog({ sala }: { sala: Sala }) {
       if (typeof window !== "undefined") {
         localStorage.removeItem(`last_password_${sala.meterId}`);
       }
-      toast.success("Usuário excluído.");
+      toast.success("Usuário excluído com sucesso!");
+      
+      // Atualiza a página após 2 segundos para mostrar as mudanças
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
     },
     onError: (err) => {
       const full = extractErrorMessage(err);
@@ -151,6 +167,8 @@ export function ManageUserDialog({ sala }: { sala: Sala }) {
     });
   }
 
+
+
   return (
     <Dialog
       open={open}
@@ -168,29 +186,47 @@ export function ManageUserDialog({ sala }: { sala: Sala }) {
         <Button
           variant="outline"
           size="icon"
-          className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50"
+          className="h-10 w-10 text-green-600 hover:text-green-700 hover:bg-green-50 border-green-200 hover:border-green-300 smooth-transition-fast shadow-md hover:shadow-lg"
           title="Gerenciar Usuário"
         >
-          <Settings className="h-4 w-4" />
+          <Settings className="h-5 w-5" />
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="p-6 max-w-md relative">
+        <button
+          type="button"
+          onClick={() => setOpen(false)}
+          className="absolute -top-3 -right-3 h-10 w-10 inline-flex items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600 hover:text-white smooth-transition-fast focus-ring border-2 border-white shadow-xl z-20 hover:scale-110"
+          aria-label="Fechar"
+        >
+          <X className="h-5 w-5" />
+        </button>
         <DialogHeader>
-          <DialogTitle>Gerenciar Usuário da Sala {sala.meterId}</DialogTitle>
-          <DialogDescription>
-            {sala.user ? `Usuário atual: ${sala.user.email}` : "Esta sala ainda não possui um usuário."}
-          </DialogDescription>
+          <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-4">
+            <DialogTitle className="text-green-900">Gerenciar Usuário da Sala #{sala.meterId}</DialogTitle>
+            <DialogDescription className="text-green-700 mt-2">
+              {sala.user ? "Atualize os dados do usuário ou exclua-o da sala." : "Crie um novo usuário para esta sala."}
+            </DialogDescription>
+          </div>
         </DialogHeader>
 
-        {resultMessage ? (
-          <div className="space-y-4">
-            <p className="text-green-600">{resultMessage}</p>
-            <Button onClick={() => setOpen(false)}>Fechar</Button>
+        {resultMessage && (
+          <div className="p-4 bg-green-50 border border-green-200 rounded-xl flex items-start gap-3">
+            <CheckCircle className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+            <p className="text-sm text-green-800">{resultMessage}</p>
           </div>
-        ) : sala.user ? (
+        )}
+
+        {genericError && (
+          <div className="p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
+            <p className="text-sm text-red-800">{genericError}</p>
+          </div>
+        )}
+
+        {sala.user ? (
           <Form {...updateForm}>
-            <form onSubmit={updateForm.handleSubmit(onUpdate)} className="space-y-4">
-              {genericError && <p className="text-sm text-red-600">{genericError}</p>}
+            <form onSubmit={updateForm.handleSubmit(onUpdate)} className="space-y-6">
               <FormField
                 control={updateForm.control}
                 name="email"
@@ -198,7 +234,11 @@ export function ManageUserDialog({ sala }: { sala: Sala }) {
                   <FormItem>
                     <FormLabel>Novo Email (opcional)</FormLabel>
                     <FormControl>
-                      <Input placeholder="novo.email@dominio.com" {...field} />
+                      <Input 
+                        placeholder="novo.email@dominio.com" 
+                        className="text-base" 
+                        {...field} 
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -211,39 +251,73 @@ export function ManageUserDialog({ sala }: { sala: Sala }) {
                   <FormItem>
                     <FormLabel>Nova Senha (opcional)</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="Mínimo 6 caracteres" {...field} />
+                      <Input 
+                        type="password" 
+                        placeholder="Mínimo 6 caracteres" 
+                        className="text-base" 
+                        {...field} 
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <div className="flex items-center gap-3">
-                <Button type="submit" disabled={updateMutation.isPending}>
-                  {updateMutation.isPending ? "Salvando..." : "Salvar"}
+              
+              <DialogFooter className="flex-col sm:flex-row gap-3">
+                <Button 
+                  type="submit" 
+                  disabled={updateMutation.isPending}
+                  className="flex items-center gap-2 w-full sm:w-auto"
+                >
+                  {updateMutation.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Salvando...
+                    </>
+                  ) : (
+                                          <>
+                        <User className="h-4 w-4" />
+                        Salvar Alterações
+                      </>
+                  )}
                 </Button>
-                <Button type="button" variant="outline" disabled={deleteMutation.isPending} onClick={() => deleteMutation.mutate({ meterId: sala.meterId })}>
-                  {deleteMutation.isPending ? "Excluindo..." : "Excluir Usuário"}
+                <Button 
+                  type="button" 
+                  variant="outline"
+                  disabled={deleteMutation.isPending} 
+                  onClick={() => deleteMutation.mutate({ meterId: sala.meterId })} 
+                  className="flex items-center gap-2 w-full sm:w-auto text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 hover:border-red-300"
+                >
+                  {deleteMutation.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Excluindo...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="h-4 w-4" />
+                      Excluir Usuário
+                    </>
+                  )}
                 </Button>
-              </div>
+              </DialogFooter>
             </form>
           </Form>
         ) : (
           <Form {...createForm}>
-            <form onSubmit={createForm.handleSubmit(onCreate)} className="space-y-4">
-              {genericError && <p className="text-sm text-red-600">{genericError}</p>}
-              {(createForm.formState.errors.email || createForm.formState.errors.password) && (
-                <div className="rounded bg-red-100 text-red-800 px-3 py-2 text-sm">
-                  {createForm.formState.errors.email?.message || createForm.formState.errors.password?.message}
-                </div>
-              )}
+            <form onSubmit={createForm.handleSubmit(onCreate)} className="space-y-6">
               <FormField
                 control={createForm.control}
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>Email do Usuário</FormLabel>
                     <FormControl>
-                      <Input placeholder="dono.sala@dominio.com" {...field} />
+                      <Input 
+                        placeholder="dono.sala@dominio.com" 
+                        className="text-base" 
+                        {...field} 
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -256,15 +330,37 @@ export function ManageUserDialog({ sala }: { sala: Sala }) {
                   <FormItem>
                     <FormLabel>Senha</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="Mínimo 6 caracteres" {...field} />
+                      <Input 
+                        type="password" 
+                        placeholder="Mínimo 6 caracteres" 
+                        className="text-base" 
+                        {...field} 
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <Button type="submit" disabled={createMutation.isPending}>
-                {createMutation.isPending ? "Criando..." : "Criar Usuário"}
-              </Button>
+              
+              <DialogFooter>
+                <Button 
+                  type="submit" 
+                  disabled={createMutation.isPending}
+                  className="flex items-center gap-2 w-full"
+                >
+                  {createMutation.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Criando...
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus className="h-4 w-4" />
+                      Criar Usuário
+                    </>
+                  )}
+                </Button>
+              </DialogFooter>
             </form>
           </Form>
         )}

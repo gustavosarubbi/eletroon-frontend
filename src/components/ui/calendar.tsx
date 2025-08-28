@@ -67,12 +67,13 @@ export function Calendar({
   const weekdayLabels = ["D", "S", "T", "Q", "Q", "S", "S"]; // Dom..Sab
 
   return (
-    <div className="w-[260px]">
-      <div className="flex items-center justify-between mb-2">
+    <div className="w-[280px] p-4 rounded-2xl gradient-glass shadow-xl border border-white/20 relative z-popover">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
         <button
           type="button"
           onClick={goPrev}
-          className="h-7 w-7 inline-flex items-center justify-center rounded border border-neutral-300 text-black hover:bg-neutral-100"
+          className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-gray-200 text-gray-700 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300 smooth-transition-fast focus-ring shadow-sm"
           aria-label="Mês anterior"
         >
           ‹
@@ -80,7 +81,7 @@ export function Calendar({
         <div className="flex items-center gap-2">
           <select
             aria-label="Selecionar mês"
-            className="h-7 rounded border border-neutral-300 bg-white px-2 text-sm text-black"
+            className="h-8 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 hover:border-blue-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 smooth-transition-fast shadow-sm"
             value={month}
             onChange={(e) => setMonth(parseInt(e.target.value, 10))}
           >
@@ -90,7 +91,7 @@ export function Calendar({
           </select>
           <select
             aria-label="Selecionar ano"
-            className="h-7 rounded border border-neutral-300 bg-white px-2 text-sm text-black"
+            className="h-8 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 hover:border-blue-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 smooth-transition-fast shadow-sm"
             value={year}
             onChange={(e) => setYear(parseInt(e.target.value, 10))}
           >
@@ -102,42 +103,53 @@ export function Calendar({
         <button
           type="button"
           onClick={goNext}
-          className="h-7 w-7 inline-flex items-center justify-center rounded border border-neutral-300 text-black hover:bg-neutral-100"
+          className="h-8 w-8 inline-flex items-center justify-center rounded-lg border border-gray-200 text-gray-700 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300 smooth-transition-fast focus-ring shadow-sm"
           aria-label="Próximo mês"
         >
           ›
         </button>
       </div>
-      <div className="grid grid-cols-7 gap-1 text-[11px] text-black mb-1">
+
+      {/* Weekday Labels */}
+      <div className="grid grid-cols-7 gap-1 mb-2">
         {weekdayLabels.map((w, index) => (
-          <div key={`weekday-${index}`} className="text-center">{w}</div>
+          <div key={`weekday-${index}`} className="text-center text-xs font-bold text-gray-600 py-2">
+            {w}
+          </div>
         ))}
       </div>
+
+      {/* Calendar Grid */}
       <div className="grid grid-cols-7 gap-1">
         {weeks.map((row, i) => (
           <React.Fragment key={i}>
             {row.map((cell, j) => {
-              if (cell.day == null) return <div key={`${i}-${j}`} className="h-8" />;
+              if (cell.day == null) return <div key={`${i}-${j}`} className="h-10" />;
+              
               const isStartDate = cell.dateStr === startDateStr;
               const isEndDate = cell.dateStr === endDateStr;
               const isInRange = startDateStr && endDateStr && 
                 cell.dateStr && 
                 cell.dateStr >= startDateStr && 
                 cell.dateStr <= endDateStr;
+              const isToday = cell.dateStr === toDateString(new Date());
               
               return (
                 <button
                   key={`${i}-${j}`}
                   type="button"
                   onClick={() => cell.dateStr && onSelect(cell.dateStr)}
-                  className={
-                    "h-8 rounded text-sm text-black " +
-                    (isStartDate || isEndDate
-                      ? "bg-neutral-900 text-white hover:bg-neutral-800 font-bold"
+                  className={`
+                    h-10 rounded-xl text-sm font-semibold smooth-transition-fast focus-ring shadow-sm
+                    ${isStartDate || isEndDate
+                      ? "gradient-primary text-white shadow-lg hover:shadow-xl"
                       : isInRange
-                      ? "bg-neutral-200 text-black hover:bg-neutral-300 border border-neutral-300"
-                      : "hover:bg-neutral-100 border border-neutral-200")
-                  }
+                      ? "bg-blue-100 text-blue-700 border border-blue-200 hover:bg-blue-200 shadow-sm"
+                      : isToday
+                      ? "bg-green-100 text-green-700 border-2 border-green-300 hover:bg-green-200 shadow-sm"
+                      : "text-gray-900 hover:bg-gray-100 border border-transparent hover:border-gray-200"
+                    }
+                  `}
                 >
                   {cell.day}
                 </button>

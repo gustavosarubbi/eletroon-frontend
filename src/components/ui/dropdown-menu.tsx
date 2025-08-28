@@ -61,20 +61,47 @@ export function DropdownMenuTrigger({ asChild, children }: { asChild?: boolean; 
     });
   }
   return (
-    <button type="button" onClick={handleClick} className="inline-flex items-center">
+    <button 
+      type="button" 
+      onClick={handleClick} 
+      className="inline-flex items-center focus-ring smooth-transition-fast"
+    >
       {children}
     </button>
   );
 }
 
-export function DropdownMenuContent({ children, align }: { children: React.ReactNode; align?: "start" | "end" | string }) {
+export function DropdownMenuContent({ 
+  children, 
+  align = "start",
+  className = ""
+}: { 
+  children: React.ReactNode; 
+  align?: "start" | "end" | string;
+  className?: string;
+}) {
   const ctx = React.useContext(MenuContext);
+  const [isVisible, setIsVisible] = React.useState(false);
+  
+  React.useEffect(() => {
+    if (ctx?.open) {
+      setIsVisible(true);
+    } else {
+      const timer = setTimeout(() => setIsVisible(false), 150);
+      return () => clearTimeout(timer);
+    }
+  }, [ctx?.open]);
+
   if (!ctx) return null;
-  const { open } = ctx;
-  if (!open) return null;
+  if (!ctx.open && !isVisible) return null;
+  
   return (
     <div
-      className={`absolute z-50 mt-2 min-w-[160px] ${align === "end" ? "right-0" : "left-0"} rounded-md border border-neutral-200 bg-white text-neutral-900 shadow dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100`}
+      className={`absolute z-dropdown mt-2 min-w-[200px] ${
+        align === "end" ? "right-0" : "left-0"
+      } rounded-2xl gradient-glass shadow-2xl border border-white/20 backdrop-blur-xl ${
+        isVisible ? 'animate-fade-in-scale' : ''
+      } ${className}`}
       onClick={(e) => e.stopPropagation()}
     >
       {children}
@@ -82,24 +109,46 @@ export function DropdownMenuContent({ children, align }: { children: React.React
   );
 }
 
-export function DropdownMenuLabel({ children }: { children: React.ReactNode }) {
-      return <div className="px-3 py-2 text-xs font-medium text-black dark:text-neutral-300">{children}</div>;
+export function DropdownMenuLabel({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  return (
+    <div className={`px-4 py-2 text-xs font-bold text-gradient-hero uppercase tracking-wide ${className}`}>
+      {children}
+    </div>
+  );
 }
 
-export function DropdownMenuSeparator() {
-  return <div className="my-1 h-px bg-neutral-200 dark:bg-neutral-700" />;
+export function DropdownMenuSeparator({ className = "" }: { className?: string }) {
+  return (
+    <div className={`my-1 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent ${className}`} />
+  );
 }
 
-export function DropdownMenuItem({ onClick, children }: { onClick?: () => void; children: React.ReactNode }) {
+export function DropdownMenuItem({ 
+  onClick, 
+  children, 
+  className = "",
+  disabled = false
+}: { 
+  onClick?: () => void; 
+  children: React.ReactNode;
+  className?: string;
+  disabled?: boolean;
+}) {
   const ctx = React.useContext(MenuContext);
   const handle = () => {
-    onClick?.();
-    ctx?.setOpen(false);
+    if (!disabled) {
+      onClick?.();
+      ctx?.setOpen(false);
+    }
   };
+  
   return (
     <button
       onClick={handle}
-      className="w-full select-none text-left px-3 py-2 text-sm text-neutral-900 hover:bg-neutral-100 dark:text-neutral-100 dark:hover:bg-neutral-800 rounded"
+      disabled={disabled}
+      className={`w-full select-none text-left px-4 py-3 text-sm text-gray-700 hover:text-gray-900 hover:bg-blue-50/50 rounded-xl smooth-transition-fast focus-ring ${
+        disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+      } ${className}`}
     >
       {children}
     </button>

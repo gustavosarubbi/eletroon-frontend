@@ -1,13 +1,17 @@
 "use client";
 
+import * as React from "react";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { Button } from "../../../../components/ui/button";
+import { Calendar } from "../../../../components/ui/calendar";
+import { Popover, PopoverTrigger, PopoverContent } from "../../../../components/ui/popover";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "../../../../contexts/AuthContext";
 import { useMutation } from "@tanstack/react-query";
+import { Loader2, Calendar as CalendarIcon, Download, FileText, BarChart3, Sparkles } from "lucide-react";
+import { toast } from "sonner";
+import { motion } from "framer-motion";
 
 export function MonthlyReport() {
   const { user } = useAuth();
@@ -51,10 +55,11 @@ export function MonthlyReport() {
       
       // Resetar seleção
       setSelectedMonth("");
+      toast.success("Relatório mensal exportado com sucesso!");
     },
     onError: (error) => {
       console.error("Falha ao exportar relatório mensal", error);
-      alert("Não foi possível exportar o relatório mensal.");
+      toast.error("Não foi possível exportar o relatório mensal.");
     }
   });
 
@@ -95,265 +100,227 @@ export function MonthlyReport() {
       // Resetar datas
       setStartDate("");
       setEndDate("");
+      toast.success("Relatório de período exportado com sucesso!");
     },
     onError: (error) => {
-      console.error("Falha ao exportar relatório por período", error);
-      alert("Não foi possível exportar o relatório por período.");
+      console.error("Falha ao exportar relatório de período", error);
+      toast.error("Não foi possível exportar o relatório de período.");
     }
   });
 
-  const handleMonthExport = () => {
-    if (selectedMonth) {
-      monthlyMutation.mutate();
-    }
-  };
 
-  const handlePeriodExport = () => {
-    if (startDate && endDate) {
-      periodMutation.mutate();
-    }
-  };
 
-  const isExportDisabled = !selectedMonth || monthlyMutation.isPending;
-  const isPeriodExportDisabled = !startDate || !endDate || periodMutation.isPending;
-
-  // Gerar lista de meses disponíveis (últimos 12 meses)
-  const availableMonths = Array.from({ length: 12 }, (_, i) => {
-    const date = new Date();
-    date.setMonth(date.getMonth() - i);
-    return format(date, 'yyyy-MM');
-  });
+  const isMonthlyDisabled = !selectedMonth || monthlyMutation.isPending;
+  const isPeriodDisabled = !startDate || !endDate || periodMutation.isPending;
 
   return (
-    <div className="flex flex-col sm:flex-row items-center gap-2">
-      {/* Popover para relatório mensal */}
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button 
-            variant="outline" 
-            size="default"
-            className="bg-blue-600 hover:bg-blue-700 text-white border-blue-600"
-          >
-            📅 Relatório Mensal
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent align="center">
-          <div className="p-6 space-y-4">
-            <div className="space-y-2">
-              <h4 className="font-medium leading-none">Relatório Mensal</h4>
-              <p className="text-sm text-muted-foreground">
-                Escolha o mês para gerar o relatório completo
-              </p>
-            </div>
-            
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Selecionar Mês/Ano:</label>
-              <div className="grid grid-cols-2 gap-4">
-                {/* Seletor de Mês */}
-                <div className="space-y-2">
-                  <label className="text-xs text-black">Mês:</label>
-                  <select
-                    value={selectedMonth ? new Date(selectedMonth + '-01').getMonth() : ''}
-                    onChange={(e) => {
-                      const month = parseInt(e.target.value);
-                      const year = selectedMonth ? new Date(selectedMonth + '-01').getFullYear() : new Date().getFullYear();
-                      setSelectedMonth(`${year}-${String(month + 1).padStart(2, '0')}`);
-                    }}
-                    className="w-full p-2 border rounded-md text-sm"
-                  >
-                    <option value="">Selecione</option>
-                    {Array.from({ length: 12 }, (_, i) => (
-                      <option key={i} value={i}>
-                        {format(new Date(2024, i, 1), 'MMMM', { locale: ptBR })}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                
-                {/* Seletor de Ano */}
-                <div className="space-y-2">
-                  <label className="text-xs text-black">Ano:</label>
-                  <select
-                    value={selectedMonth ? new Date(selectedMonth + '-01').getFullYear() : ''}
-                    onChange={(e) => {
-                      const year = parseInt(e.target.value);
-                      const month = selectedMonth ? new Date(selectedMonth + '-01').getMonth() : new Date().getMonth();
-                      setSelectedMonth(`${year}-${String(month + 1).padStart(2, '0')}`);
-                    }}
-                    className="w-full p-2 border rounded-md text-sm"
-                  >
-                    <option value="">Selecione</option>
-                    {Array.from({ length: 5 }, (_, i) => {
-                      const year = new Date().getFullYear() - i;
-                      return (
-                        <option key={year} value={year}>
-                          {year}
-                        </option>
-                      );
-                    })}
-                  </select>
-                </div>
-              </div>
-            </div>
+    <motion.div 
+      className="glass-effect rounded-3xl p-8 border-0 shadow-2xl backdrop-blur-xl"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6 }}
+    >
+      <div className="text-center mb-8">
+        <motion.div 
+          className="inline-flex items-center justify-center w-16 h-16 gradient-primary rounded-2xl mb-4 shadow-lg"
+          whileHover={{ scale: 1.1, rotate: 5 }}
+          transition={{ type: "spring", stiffness: 300 }}
+        >
+          <BarChart3 className="w-8 h-8 text-white" />
+        </motion.div>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Relatórios Avançados</h2>
+        <p className="text-gray-600 font-medium">Exporte dados detalhados para análise</p>
+      </div>
 
-            {/* Mês selecionado */}
-            {selectedMonth && (
-              <div className="p-3 bg-blue-50 rounded-md">
-                <div className="text-sm font-medium text-black">
-                  Mês Selecionado:
-                </div>
-                <div className="text-sm text-black">
-                  {format(new Date(selectedMonth + '-01'), 'MMMM yyyy', { locale: ptBR })}
-                </div>
-              </div>
-            )}
-            
-            {/* Botões de ação */}
-            <div className="flex flex-col gap-2">
-              <Button 
-                onClick={handleMonthExport} 
-                disabled={isExportDisabled}
-                size="default"
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                {monthlyMutation.isPending ? "Gerando..." : "📊 Gerar Relatório Mensal"}
-              </Button>
-              
-              <Button 
-                variant="outline" 
-                onClick={() => setSelectedMonth("")}
-                size="default"
-                className="w-full"
-              >
-                Limpar Seleção
-              </Button>
+      <div className="grid gap-8 md:grid-cols-2">
+        {/* Relatório Mensal */}
+        <motion.div 
+          className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border-2 border-blue-100 shadow-lg"
+          whileHover={{ scale: 1.02, y: -2 }}
+          transition={{ type: "spring", stiffness: 300 }}
+        >
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 gradient-accent rounded-xl flex items-center justify-center shadow-md">
+              <CalendarIcon className="w-5 h-5 text-white" />
             </div>
+            <div>
+              <h3 className="text-lg font-bold text-gray-900">Relatório Mensal</h3>
+              <p className="text-sm text-gray-600">Exporte dados de um mês específico</p>
+            </div>
+          </div>
 
-            {/* Atalhos para meses recentes */}
-            <div className="space-y-2">
-              <div className="text-sm font-medium text-black">Meses Recentes:</div>
-              <div className="grid grid-cols-2 gap-2">
-                {availableMonths.slice(0, 6).map((month) => (
+          <div className="space-y-4">
+            <Popover>
+              <PopoverTrigger asChild>
+                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                   <Button
-                    key={month}
                     variant="outline"
-                    size="default"
-                    onClick={() => setSelectedMonth(month)}
-                    className="text-xs"
+                    className="w-full justify-start text-left font-normal border-2 border-gray-200 rounded-2xl p-4 hover:border-blue-300 hover:shadow-md transition-all duration-300 shadow-sm"
                   >
-                    {format(new Date(month + '-01'), 'MMM yyyy', { locale: ptBR })}
+                    <CalendarIcon className="mr-3 h-5 w-5 text-blue-500" />
+                    {selectedMonth ? (
+                      format(new Date(selectedMonth + '-01'), 'MMMM yyyy', { locale: ptBR })
+                    ) : (
+                      <span className="text-gray-500">Selecione o mês</span>
+                    )}
                   </Button>
-                ))}
-              </div>
+                </motion.div>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  startDate={selectedMonth ? selectedMonth + '-01' : undefined}
+                  endDate={selectedMonth ? selectedMonth + '-31' : undefined}
+                  onSelect={(dateStr) => {
+                    const date = new Date(dateStr);
+                    const monthStr = format(date, 'yyyy-MM');
+                    setSelectedMonth(monthStr);
+                  }}
+                />
+              </PopoverContent>
+            </Popover>
+
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+              <Button
+                onClick={() => monthlyMutation.mutate()}
+                disabled={isMonthlyDisabled}
+                className="w-full h-12 button-gradient-animate text-white rounded-2xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+              >
+                {monthlyMutation.isPending ? (
+                  <motion.div 
+                    className="flex items-center gap-3"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                  >
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <span>Exportando...</span>
+                  </motion.div>
+                ) : (
+                  <motion.div 
+                    className="flex items-center gap-3"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                  >
+                    <Download className="w-5 h-5" />
+                    <span>Exportar CSV</span>
+                  </motion.div>
+                )}
+              </Button>
+            </motion.div>
+          </div>
+        </motion.div>
+
+        {/* Relatório de Período */}
+        <motion.div 
+          className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border-2 border-green-100 shadow-lg"
+          whileHover={{ scale: 1.02, y: -2 }}
+          transition={{ type: "spring", stiffness: 300 }}
+        >
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 gradient-success rounded-xl flex items-center justify-center shadow-md">
+              <FileText className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-gray-900">Período Personalizado</h3>
+              <p className="text-sm text-gray-600">Exporte dados de um período específico</p>
             </div>
           </div>
-        </PopoverContent>
-      </Popover>
 
-      {/* Popover para período personalizado */}
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button 
-            variant="outline" 
-            size="default"
-            className="bg-green-600 hover:bg-green-700 text-white border-green-600"
-          >
-            📊 Relatório Personalizado
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent align="center">
-          <div className="p-6 space-y-4">
-            <div className="space-y-2">
-              <h4 className="font-medium leading-none text-black">Relatório Personalizado</h4>
-              <p className="text-sm text-black">
-                Escolha as datas de início e fim para gerar seu relatório personalizado
-              </p>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start text-left font-normal border-2 border-gray-200 rounded-xl p-4 hover:border-blue-300 transition-all duration-300"
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4 text-blue-500" />
+                      {startDate ? (
+                        format(new Date(startDate), 'dd/MM/yyyy')
+                      ) : (
+                        <span className="text-gray-500 text-sm">Início</span>
+                      )}
+                    </Button>
+                  </motion.div>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    startDate={startDate}
+                    endDate={endDate}
+                    onSelect={(dateStr) => setStartDate(dateStr)}
+                  />
+                </PopoverContent>
+              </Popover>
+
+              <Popover>
+                <PopoverTrigger asChild>
+                  <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start text-left font-normal border-2 border-gray-200 rounded-xl p-4 hover:border-blue-300 transition-all duration-300"
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4 text-blue-500" />
+                      {endDate ? (
+                        format(new Date(endDate), 'dd/MM/yyyy')
+                      ) : (
+                        <span className="text-gray-500 text-sm">Fim</span>
+                      )}
+                    </Button>
+                  </motion.div>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    startDate={startDate}
+                    endDate={endDate}
+                    onSelect={(dateStr) => setEndDate(dateStr)}
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
-            
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Selecionar Período:</label>
-              <Calendar
-                startDate={startDate}
-                endDate={endDate}
-                onSelect={(date) => {
-                  if (!startDate) {
-                    // Primeira seleção: definir data inicial
-                    setStartDate(date);
-                    setEndDate(""); // Resetar data final
-                  } else if (!endDate) {
-                    // Segunda seleção: definir data final
-                    if (new Date(date) >= new Date(startDate)) {
-                      setEndDate(date);
-                    } else {
-                      // Se a data final for menor que a inicial, trocar
-                      setEndDate(startDate);
-                      setStartDate(date);
-                    }
-                  } else {
-                    // Terceira seleção: resetar e começar novo período
-                    setStartDate(date);
-                    setEndDate("");
-                  }
-                }}
 
-              />
-            </div>
-
-            {/* Informações do período selecionado */}
-            {startDate && (
-              <div className="p-3 bg-green-50 rounded-md">
-                <div className="text-sm font-medium text-black mb-2">
-                  Período do Relatório:
-                </div>
-                <div className="space-y-1">
-                  <div className="text-sm text-black">
-                    <span className="font-bold">Início:</span> {format(new Date(startDate), 'dd/MM/yyyy', { locale: ptBR })}
-                  </div>
-                  {endDate && (
-                    <div className="text-sm text-black">
-                      <span className="font-bold">Fim:</span> {format(new Date(endDate), 'dd/MM/yyyy', { locale: ptBR })}
-                    </div>
-                  )}
-                  {!endDate && (
-                    <div className="text-sm text-black italic">
-                      Clique em outra data para definir o fim do período
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-            
-            {/* Botões de ação */}
-            <div className="flex flex-col gap-2">
-              <Button 
-                onClick={handlePeriodExport} 
-                disabled={isPeriodExportDisabled}
-                size="default"
-                className={`w-full ${
-                  isPeriodExportDisabled 
-                    ? 'bg-gray-400 cursor-not-allowed' 
-                    : 'bg-green-600 hover:bg-green-700'
-                } text-white`}
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+              <Button
+                onClick={() => periodMutation.mutate()}
+                disabled={isPeriodDisabled}
+                className="w-full h-12 button-gradient-animate text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
               >
-                {periodMutation.isPending ? "Gerando..." : "📊 Gerar Relatório Personalizado"}
+                {periodMutation.isPending ? (
+                  <motion.div 
+                    className="flex items-center gap-3"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                  >
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <span>Exportando...</span>
+                  </motion.div>
+                ) : (
+                  <motion.div 
+                    className="flex items-center gap-3"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                  >
+                    <Download className="w-5 h-5" />
+                    <span>Exportar CSV</span>
+                  </motion.div>
+                )}
               </Button>
-              
-              <Button 
-                variant="outline" 
-                onClick={() => {
-                  setStartDate("");
-                  setEndDate("");
-                }}
-                size="default"
-                className="w-full"
-                disabled={!startDate && !endDate}
-              >
-                Limpar Período
-              </Button>
-            </div>
+            </motion.div>
           </div>
-        </PopoverContent>
-      </Popover>
-    </div>
+        </motion.div>
+      </div>
+
+      {/* Footer Info */}
+      <motion.div 
+        className="mt-8 text-center"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.3 }}
+      >
+        <div className="flex items-center justify-center gap-2 text-sm text-gray-600">
+          <Sparkles className="w-4 h-4 text-blue-500" />
+          <span>Relatórios em formato CSV para análise avançada</span>
+        </div>
+      </motion.div>
+    </motion.div>
   );
 }
